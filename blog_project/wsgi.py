@@ -7,5 +7,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'blog_project.settings')
 # Get the standard Django application
 application = get_wsgi_application()
 
-# Wrap the application with WhiteNoise and tell it to serve media files
-application = WhiteNoise(application, root=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'media'))
+# Define the media root
+media_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'media')
+
+# Only add WhiteNoise for media files if the directory exists
+if os.path.isdir(media_root):
+    application = WhiteNoise(application, root=media_root)

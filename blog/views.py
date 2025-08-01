@@ -14,6 +14,10 @@ from django.views.generic import (
 )
 from .models import Post, UserPostInteraction, Comment
 from .forms import PostForm, CommentForm
+import joblib
+import numpy as np
+import os
+from django.conf import settings
 
 
 class PostListView(ListView):
@@ -139,3 +143,31 @@ def like_post(request, pk):
     else:
         post.likes.add(request.user)
     return redirect('post-detail', pk=pk)
+
+
+def health_check(request):
+    """Simple health check endpoint for deployment debugging"""
+    try:
+        # Check if database is accessible
+        post_count = Post.objects.count()
+        
+        # Check if media directory exists
+        media_exists = os.path.exists(settings.MEDIA_ROOT)
+        
+        # Check if static files directory exists
+        static_exists = os.path.exists(settings.STATIC_ROOT)
+        
+        return JsonResponse({
+            'status': 'healthy',
+            'database': 'connected',
+            'post_count': post_count,
+            'media_directory_exists': media_exists,
+            'static_directory_exists': static_exists,
+            'debug': settings.DEBUG,
+            'allowed_hosts': settings.ALLOWED_HOSTS,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'unhealthy',
+            'error': str(e)
+        }, status=500)

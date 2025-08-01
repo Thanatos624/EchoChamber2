@@ -21,4 +21,6 @@ urlpatterns = [
     path('post/<int:pk>/delete/', PostDeleteView.as_view(), name='post-delete'),
     # New URL for the like functionality
     path('post/<int:pk>/like/', views.like_post, name='like-post'),
+    # Health check endpoint
+    path('health/', views.health_check, name='health-check'),
 ]
