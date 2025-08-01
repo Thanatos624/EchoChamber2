@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset>
+                    <legend class="border-bottom mb-4"><h2>Delete Post</h2></legend>
+                    <p>Are you sure you want to delete the post "{{ object.title }}"?</p>
+                </fieldset>
+                <div class="form-group mt-4">
+                    <button class="btn btn-danger" type="submit">Yes, Delete</button>
+                    <a class="btn btn-secondary" href="{% url 'post-detail' object.id %}">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

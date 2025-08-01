@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}For You{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Recommended For You</h1>
+<p class="text-muted">These recommendations are based on your viewing history.</p>
+
+<div class="recommendations mt-4">
+    <ul id="recommendation-list" class="list-group">
+        <li class="list-group-item">Loading recommendations...</li>
+    </ul>
+</div>
+
+{{ user.id|json_script:"user-id" }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const userId = JSON.parse(document.getElementById('user-id').textContent);
+        const recommendationList = document.getElementById('recommendation-list');
+
+        if (userId) {
+            fetch(`/api/recommendations/user/${userId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    recommendationList.innerHTML = ''; // Clear the "Loading..." text
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(rec => {
+                            const listItem = document.createElement('li');
+                            listItem.className = 'list-group-item';
+                            const link = document.createElement('a');
+                            link.href = `/post/${rec.id}/`;
+                            link.textContent = rec.title;
+                            listItem.appendChild(link);
+                            recommendationList.appendChild(listItem);
+                        });
+                    } else {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item';
+                        listItem.textContent = 'No personalized recommendations available yet. Keep browsing to generate more!';
+                        recommendationList.appendChild(listItem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching recommendations:', error);
+                    recommendationList.innerHTML = '<li class="list-group-item list-group-item-danger">Could not load recommendations.</li>';
+                });
+        } else {
+            recommendationList.innerHTML = '<li class="list-group-item">Please log in to see your recommendations.</li>';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+    <div class="card mb-4">
+        <!-- Display the post's image if it exists -->
+        {% if post.image %}
+            <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+        {% endif %}
+
+        <div class="card-body">
+            <h1 class="card-title">{{ post.title }}</h1>
+            <p class="card-subtitle text-muted mb-2">
+                Published by <a href="{% url 'user-posts' post.author.username %}" class="author-link">{{ post.author.username }}</a> on {{ post.publication_date|date:"F d, Y" }}
+            </p>
+            <hr>
+            <div class="card-text mt-4">
+                {{ post.content|linebreaks }}
+            </div>
+
+            <!-- Like Button and Count -->
+            <div class="d-flex align-items-center mt-3">
+                {% if user.is_authenticated %}
+                    <form action="{% url 'like-post' post.pk %}" method="POST" class="me-3">
+                        {% csrf_token %}
+                        {% if user in post.likes.all %}
+                            <button type="submit" class="btn btn-danger">Unlike</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">Like</button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+                <strong>{{ post.likes.count }} Like{{ post.likes.count|pluralize }}</strong>
+            </div>
+
+            <!-- Post Controls for Author -->
+            {% if user.is_authenticated and user == post.author %}
+                <div class="mt-4 border-top pt-3">
+                    <a class="btn btn-secondary" href="{% url 'post-update' post.id %}">Update</a>
+                    <a class="btn btn-danger" href="{% url 'post-delete' post.id %}">Delete</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="mb-3">Comments</h3>
+            {% if user.is_authenticated %}
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ comment_form|crispy }}
+                    <button type="submit" class="btn btn-primary mt-2">Submit Comment</button>
+                </form>
+                <hr>
+            {% else %}
+                <div class="alert alert-info">
+                    You must be <a href="{% url 'login' %}">logged in</a> to post a comment.
+                </div>
+            {% endif %}
+
+            {% for comment in comments %}
+                <div class="d-flex mb-3">
+                    <div class="ms-3">
+                        <div class="fw-bold">{{ comment.author.username }}</div>
+                        <small class="text-muted">{{ comment.created_date|date:"F d, Y, P" }}</small>
+                        <p>{{ comment.text|linebreaks }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No comments yet. Be the first to comment!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Chat Room Section -->
+    <div class="chat-container mb-4">
+        <h3>Live Chat</h3>
+        <div id="chat-log" class="form-control" style="height: 200px; overflow-y: scroll;"></div>
+        <div class="input-group mt-2">
+            <input id="chat-message-input" type="text" class="form-control" placeholder="Type message...">
+            <button id="chat-message-submit" class="btn btn-success">Send</button>
+        </div>
+    </div>
+
+    {{ post.id|json_script:"post-id" }}
+    {{ user.username|json_script:"user-username" }}
+
+    <script>
+        const postId = JSON.parse(document.getElementById('post-id').textContent);
+
+        // Chat Script
+        if (document.querySelector('#chat-message-input')) {
+            const username = JSON.parse(document.getElementById('user-username').textContent);
+            const chatLog = document.querySelector('#chat-log');
+            
+            // Use wss:// for secure connections on live sites
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const chatSocket = new WebSocket(
+                protocol
+                + '//'
+                + window.location.host
+                + '/ws/chat/'
+                + postId
+                + '/'
+            );
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                chatLog.innerHTML += '<div><strong>' + data.username + '</strong>: ' + data.message + '</div>';
+                chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll
+            };
+
+            chatSocket.onclose = function(e) {
+                console.error('Chat socket closed unexpectedly');
+                chatLog.innerHTML += '<div class="text-danger">Connection lost. Please refresh the page.</div>';
+            };
+
+            document.querySelector('#chat-message-input').focus();
+            document.querySelector('#chat-message-input').onkeyup = function(e) {
+                if (e.key === 'Enter') {
+                    document.querySelector('#chat-message-submit').click();
+                }
+            };
+
+            document.querySelector('#chat-message-submit').onclick = function(e) {
+                const messageInputDom = document.querySelector('#chat-message-input');
+                const message = messageInputDom.value;
+                if (message.trim() !== '') {
+                    chatSocket.send(JSON.stringify({
+                        'message': message,
+                        'username': username
+                    }));
+                    messageInputDom.value = '';
+                }
+            };
+        }
+    </script>
+{% endblock %}

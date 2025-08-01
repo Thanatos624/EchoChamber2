@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Blog Post Form{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <!-- The enctype attribute is essential for file uploads -->
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset>
+                <legend class="border-bottom mb-4">
+                    <h2>Blog Post</h2>
+                </legend>
+                {{ form|crispy }}
+            </fieldset>
+            <div class="form-group mt-4">
+                <button class="btn btn-primary" type="submit">Save Post</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

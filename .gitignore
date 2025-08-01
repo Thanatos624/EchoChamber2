@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# Django
+*.log
+db.sqlite3
+/media/
+
+# Virtual Environment
+/venv/
+
+# Environment variables
+.env
+
+# Recommendation Models
+*.pkl
+
+# Static files directory
+/staticfiles/
